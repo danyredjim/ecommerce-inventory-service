@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-inventory-api
+  labels:
+    app: ecommerce-inventory   # 🔥 agrupa toda la app
+    service: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecommerce-inventory
+  template:
+    metadata:
+      labels:
+        app: ecommerce-inventory
+    spec:
+      containers:
+        - name: ecommerce-inventory
+          image: localhost:5000/ecommerce-inventory:5
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: USERS_SERVICE_URL
+              value: http://ecommerce-inventory:8080   # 🔥 AÑADIDO
