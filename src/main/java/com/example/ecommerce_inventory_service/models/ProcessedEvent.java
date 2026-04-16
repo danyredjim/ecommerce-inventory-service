@@ -7,7 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "inventories")
+@Table(name = "processed_event_inventories")
 public class ProcessedEvent {
 
     @Id

@@ -6,5 +6,5 @@ spec:
   selector:
     app: ecommerce-inventory
   ports:
-    - port: 80
+    - port: 8089
       targetPort: 8080

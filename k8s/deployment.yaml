@@ -17,10 +17,20 @@ spec:
     spec:
       containers:
         - name: ecommerce-inventory
-          image: localhost:5000/ecommerce-inventory:5
-          imagePullPolicy: Never
+          image: host.docker.internal:5000/ecommerce-order-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
             - name: USERS_SERVICE_URL
               value: http://ecommerce-inventory:8080   # 🔥 AÑADIDO
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/amazon_ecommerce_inventory
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASS
+              value: postgres
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: SCHEMA_REGISTRY
+              value: http://schema-registry:8081
