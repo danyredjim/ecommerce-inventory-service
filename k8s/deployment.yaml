@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: ecommerce-inventory
-          image: host.docker.internal:5000/ecommerce-order-service:latest
+          image: host.docker.internal:5000/ecommerce-inventory-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
