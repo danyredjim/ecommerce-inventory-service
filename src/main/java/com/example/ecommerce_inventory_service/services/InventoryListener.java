@@ -89,6 +89,7 @@ public class InventoryListener {
 
     @KafkaListener(
             topics = "order-created",
+            groupId = "inventory-group-v1",
             containerFactory = "kafkaListenerContainerFactory"
     )
     @Transactional
