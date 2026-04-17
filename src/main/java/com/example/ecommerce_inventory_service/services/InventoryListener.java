@@ -93,7 +93,7 @@ public class InventoryListener {
             containerFactory = "kafkaListenerContainerFactory"
     )
     @Transactional
-    public void handleWithAvro(StockAvroReservedEvent event) {
+    public void handleWithAvro(OrderAvroCreatedEvent  event) {
 
         log.info("Evento recibido: {}", event);
 
