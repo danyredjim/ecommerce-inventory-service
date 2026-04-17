@@ -22,6 +22,8 @@ import com.example.ecommerce_inventory_service.repositories.ProcessedEventReposi
 
 import jakarta.transaction.Transactional;
 
+import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
+
 @Service
 public class InventoryListener {
 	
@@ -84,20 +86,19 @@ public class InventoryListener {
     }*/
 
     @KafkaListener(
-            topics = "order-created",containerFactory = "kafkaListenerContainerFactory" // 🔥 CLAVE
+            topics = "order-created",
+            containerFactory = "kafkaListenerContainerFactory"
     )
     @Transactional
-    //public void handleWhitAvro(com.example.events.OrderAvroCreatedEvent event) {
-    public void handleWhitAvro(org.apache.kafka.clients.consumer.ConsumerRecord<String, OrderAvroCreatedEvent> record) {
+    public void handleWithAvro(OrderAvroCreatedEvent event) {
 
-        OrderAvroCreatedEvent event = record.value();
+        log.info("Evento recibido: {}", event);
 
-        System.out.println("TIPO REAL: " + event.getClass());
-
-        // 🔥 1️⃣ Idempotencia
         String eventId = event.getEventId().toString();
 
+        // 🔥 1️⃣ Idempotencia
         if (processedEventRepository.existsById(eventId)) {
+            log.warn("Evento ya procesado: {}", eventId);
             return;
         }
 
@@ -113,9 +114,9 @@ public class InventoryListener {
             // 🔥 3️⃣ Marcar procesado
             processedEventRepository.save(new ProcessedEvent(eventId));
 
-            // 🔥 4️⃣ Publicar evento AVRO
-            com.example.events.StockAvroReservedEvent stockEvent =
-                    com.example.events.StockAvroReservedEvent.newBuilder()
+            // 🔥 4️⃣ Evento OK
+            StockAvroReservedEvent stockEvent =
+                    StockAvroReservedEvent.newBuilder()
                             .setEventId(UUID.randomUUID().toString())
                             .setUuid(UUID.randomUUID().toString())
                             .setOrderId(event.getOrderId())
@@ -126,11 +127,13 @@ public class InventoryListener {
 
             kafkaTemplate.send("stock-reserved", stockEvent);
 
+            log.info("Stock reservado OK para orderId={}", event.getOrderId());
+
         } catch (IllegalStateException e) {
 
-            // 🔥 5️⃣ Evento fallo AVRO
-            com.example.events.StockAvroFailedEvent failedEvent =
-                    com.example.events.StockAvroFailedEvent.newBuilder()
+            // 🔥 5️⃣ Evento FAIL
+            StockAvroFailedEvent failedEvent =
+                    StockAvroFailedEvent.newBuilder()
                             .setEventId(UUID.randomUUID().toString())
                             .setOrderId(event.getOrderId())
                             .setReason("OUT_OF_STOCK")
@@ -138,7 +141,8 @@ public class InventoryListener {
                             .build();
 
             kafkaTemplate.send("stock-failed", failedEvent);
-        }
 
+            log.warn("Stock insuficiente para orderId={}", event.getOrderId());
+        }
     }
 }
