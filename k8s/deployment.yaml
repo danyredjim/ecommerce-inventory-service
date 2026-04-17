@@ -22,8 +22,6 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            - name: USERS_SERVICE_URL
-              value: http://ecommerce-inventory:8080   # 🔥 AÑADIDO
             - name: DB_URL
               value: jdbc:postgresql://postgres:5432/amazon_ecommerce_inventory
             - name: DB_USER
