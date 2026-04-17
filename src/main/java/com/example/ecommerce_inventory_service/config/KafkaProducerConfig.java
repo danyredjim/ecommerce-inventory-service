@@ -1,94 +1,68 @@
 package com.example.ecommerce_inventory_service.config;
 
 import com.example.events.OrderAvroCreatedEvent;
-import io.confluent.kafka.serializers.KafkaAvroDeserializer;
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
-import org.apache.avro.specific.SpecificRecord;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
+import io.apicurio.registry.serde.avro.AvroKafkaSerializer;
+//import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.annotation.EnableKafka;
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.*;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@EnableKafka
 public class KafkaProducerConfig {
 
-    // =====================================
-    // 🔥 PRODUCER (para enviar stock events)
-    // =====================================
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String kafkaServer;
+
+    @Value("${spring.kafka.schema-registry}")
+    private String schemaRegistry;
+
+
+    // ✅ TEMPLATE PARA JSON (STRING)
     @Bean
-    public ProducerFactory<String, SpecificRecord> producerFactory() {
+    public ProducerFactory<String, String> stringProducerFactory() {
 
         Map<String, Object> config = new HashMap<>();
 
-        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-
-        // 🔥 Schema Registry
-        config.put("schema.registry.url", "http://localhost:8083");
-
-        // 🔥 Serializers
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
         return new DefaultKafkaProducerFactory<>(config);
     }
 
     @Bean
-    public KafkaTemplate<String, SpecificRecord> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
+    public KafkaTemplate<String, String> kafkaTemplate() {
+        return new KafkaTemplate<>(stringProducerFactory());
     }
 
-    // =====================================
-    // 🔥 CONSUMER (lee OrderAvroCreatedEvent)
-    // =====================================
+    // ✅ TEMPLATE PARA AVRO
     @Bean
-    public ConsumerFactory<String, OrderAvroCreatedEvent> consumerFactory() {
+    public ProducerFactory<String, OrderAvroCreatedEvent> avroProducerFactory() {
 
         Map<String, Object> config = new HashMap<>();
 
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        config.put(ConsumerConfig.GROUP_ID_CONFIG, "inventory-group-v2");
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
+        //config.put("schema.registry.url", schemaRegistry); // OK
+        config.put("apicurio.registry.url", schemaRegistry);
+        config.put("apicurio.registry.auto-register", true);
 
-        // 🔥 Schema Registry
-        config.put("schema.registry.url", "http://localhost:8083");
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        // config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, AvroKafkaSerializer.class);
 
-        // 🔥 Deserializers
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
-
-        // 🔥 CLAVE: devuelve objeto AVRO tipado
-        config.put("specific.avro.reader", true);
-
-        // 🔥 Leer desde inicio (útil para pruebas)
-        //config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-
-        return new DefaultKafkaConsumerFactory<>(config);
+        return new DefaultKafkaProducerFactory<>(config);
     }
 
-    // =====================================
-    // 🔥 LISTENER FACTORY (LA CLAVE ABSOLUTA)
-    // =====================================
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, OrderAvroCreatedEvent> kafkaListenerContainerFactory() {
-
-        ConcurrentKafkaListenerContainerFactory<String, OrderAvroCreatedEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-
-        factory.setConsumerFactory(consumerFactory());
-
-        // 🔥🔥🔥 ESTO SOLUCIONA TU ERROR
-        // evita que Spring intente convertir el mensaje otra vez
-        factory.setRecordMessageConverter(null);
-
-        return factory;
+    @Bean(name = "avroKafkaTemplate")
+    public KafkaTemplate<String, OrderAvroCreatedEvent> kafkaAvroTemplate() {
+        return new KafkaTemplate<>(avroProducerFactory());
     }
 }

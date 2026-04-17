@@ -85,10 +85,17 @@
 		    <version>0.0.1-SNAPSHOT</version>
 		</dependency>
 
+        <!-- confuent -->
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-avro-serializer</artifactId>
             <version>7.5.0</version>
+        </dependency>
+        <!-- apicurio -->
+        <dependency>
+            <groupId>io.apicurio</groupId>
+            <artifactId>apicurio-registry-serdes-avro-serde</artifactId>
+            <version>2.4.2.Final</version>
         </dependency>
 	</dependencies>
 
