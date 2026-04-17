@@ -33,7 +33,9 @@ public class InventoryListener {
 	@Autowired
 	ProcessedEventRepository processedEventRepository;
 
+    //private final KafkaTemplate<String, SpecificRecord> kafkaTemplate;
     private final KafkaTemplate<String, SpecificRecord> kafkaTemplate;
+
 
     public InventoryListener(KafkaTemplate<String, SpecificRecord> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
@@ -90,7 +92,7 @@ public class InventoryListener {
             containerFactory = "kafkaListenerContainerFactory"
     )
     @Transactional
-    public void handleWithAvro(OrderAvroCreatedEvent event) {
+    public void handleWithAvro(StockAvroReservedEvent event) {
 
         log.info("Evento recibido: {}", event);
 
